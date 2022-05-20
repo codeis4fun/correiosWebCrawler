@@ -1,5 +1,4 @@
 from correios import Correios, logger
-import logging
 
 logger.info('Starting buscaCEP')
 
