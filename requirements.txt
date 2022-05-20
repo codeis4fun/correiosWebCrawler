@@ -1,0 +1,4 @@
+html_to_json==2.0.0
+jsonlines==3.0.0
+requests==2.27.1
+Scrapy==2.6.1
