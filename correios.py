@@ -1,8 +1,9 @@
 
+from typing import Type
 import requests, html_to_json, jsonlines, logging
 from scrapy import Selector
 
-logger = logging.getLogger('Correios WEB CRAWLER')
+logger = logging.getLogger('Correios Web Crawler')
 logger.setLevel(logging.DEBUG)
 
 # create console handler and set level to debug
@@ -24,13 +25,27 @@ class Correios():
 		#Initializing session and using cookies for later requests :D
 		logger.info('Initializing session on buscaFaixaCep.cfm page.')
 		self.s = requests.Session()
-		initRequest = self.s.get('https://www2.correios.com.br/sistemas/buscacep/buscaFaixaCep.cfm', headers=self._headers)
+		try:
+			initRequest = self.s.get('https://www2.correios.com.br/sistemas/buscacep/buscaFaixaCep.cfm', headers=self._headers)
+		except requests.exceptions.Timeout:
+			logger.error("Source has timed out. Let`s try again in few minutes.")
+			raise
+		except requests.exceptions.TooManyRedirects:
+			logger.error("Bad URL. Too many redirects.")
+			raise
+		except requests.exceptions.RequestException as e:
+			logger.critical(e)
+			raise
 		logger.info('Extracting all states from html page.')
 		self.states = self._extractStates(initRequest.content)
 
 	def _convertHTMLTableToList(self, html: str) -> list:
 		self._html = html
-		rawList = html_to_json.convert_tables(self._html)
+		try:
+			rawList = html_to_json.convert_tables(self._html)
+		except:
+			logger.error('html_to_json failed to convert html to json object')
+			raise
 		logger.info('Cleaning up empty records...')
 		cleanEmptyElements = self._cleanEmptyElements(rawList)
 
@@ -38,7 +53,11 @@ class Correios():
 	
 	def _convertHTMLTableToListIter(self, html: str) -> list:
 		self._html = html
-		rawList = html_to_json.convert_tables(self._html)
+		try:
+			rawList = html_to_json.convert_tables(self._html)
+		except:
+			logger.error("html_to_json failed to convert html to json object")
+			raise
 		cleanEmptyElements = self._cleanEmptyElements(rawList)
 		preparedList = [list(element.values()) for element in cleanEmptyElements]
 
@@ -52,28 +71,65 @@ class Correios():
 
 	def _extractHTMLTable(self, html: str) -> str:
 		self._html = html
-		sel = Selector(text=self._html, type='html')
-		table = sel.xpath("/html/body/div[@class='back']/div[@class='tabs']/div[@class='wrap'][2]/div[@class='content']/div[@class='laminas']/div[@class='column2']/div[@class='content ']/div[@class='ctrlcontent']/table[@class='tmptabela'][2]").extract()
+		try:
+			sel = Selector(text=self._html, type='html')
+		except TypeError:
+			logger.error("Wrong input type.")
+			raise
+		try:
+			table = sel.xpath("/html/body/div[@class='back']/div[@class='tabs']/div[@class='wrap'][2]/div[@class='content']/div[@class='laminas']/div[@class='column2']/div[@class='content ']/div[@class='ctrlcontent']/table[@class='tmptabela'][2]").extract()
+		except:
+			logger.error("xpath failed to parse HTM content")
+			raise
 		return table[0]
 
 	def _extractHTMLTableIter(self, html: str) -> str:
 		self._html = html
-		sel = Selector(text=self._html, type='html')
-		table = sel.xpath("/html/body/div[@class='back']/div[@class='tabs']/div[@class='wrap'][2]/div[@class='content']/div[@class='laminas']/div[@class='column2']/div[@class='content ']/div[@class='ctrlcontent']/table[@class='tmptabela'][1]").extract()
+		try:
+			sel = Selector(text=self._html, type='html')
+		except TypeError:
+			logger.error("Wrong input type.")
+			raise
+		try:
+			table = sel.xpath("/html/body/div[@class='back']/div[@class='tabs']/div[@class='wrap'][2]/div[@class='content']/div[@class='laminas']/div[@class='column2']/div[@class='content ']/div[@class='ctrlcontent']/table[@class='tmptabela'][1]").extract()
+		except:
+			logger.error("xpath failed to parse HTM content")
+			raise
 		return table[0]
 	
 	def _extractPages(self, html: str) -> tuple:
 		self._html = html
-		sel = Selector(text=self._html, type='html')
-		pagesText = sel.xpath("/html/body/div[@class='back']/div[@class='tabs']/div[@class='wrap'][2]/div[@class='content']/div[@class='laminas']/div[@class='column2']/div[@class='content ']/div[@class='ctrlcontent']/br/preceding::text()[1]").extract()
-		pages = tuple([int(integer) for integer in pagesText[0].strip().split(' ') if integer.isdigit()])
-		return pages
+		try:
+			sel = Selector(text=self._html, type='html')
+		except TypeError:
+			logger.error("Wrong input type.")
+			raise
+		try:
+			pagesText = sel.xpath("/html/body/div[@class='back']/div[@class='tabs']/div[@class='wrap'][2]/div[@class='content']/div[@class='laminas']/div[@class='column2']/div[@class='content ']/div[@class='ctrlcontent']/br/preceding::text()[1]").extract()
+		except:
+			logger.error("xpath failed to parse HTM content")
+			raise
+		else:
+			pages = tuple([int(integer) for integer in pagesText[0].strip().split(' ') if integer.isdigit()])
+			return pages
 	
 	def _extractStates(self, html: str) -> list:
 		self._html = html
-		sel = Selector(text=self._html, type='html')
-		statesSelect = sel.xpath("/html/body/div[@class='back']/div[@class='tabs']/div[@class='wrap'][2]/div[@class='content']/div[@class='laminas']/div[@class='column2']/div[@class='content ']/div[@class='ctrlcontent']/form[@id='Geral']/div[@class='form']/div[@class='contentform']/span[2]/label/select[@class='f1col']").extract()
-		dictStates = html_to_json.convert(statesSelect[0], capture_element_attributes=False)
+		try:
+			sel = Selector(text=self._html, type='html')
+		except TypeError:
+			logger.error("Wrong input type.")
+			raise
+		try:
+			statesSelect = sel.xpath("/html/body/div[@class='back']/div[@class='tabs']/div[@class='wrap'][2]/div[@class='content']/div[@class='laminas']/div[@class='column2']/div[@class='content ']/div[@class='ctrlcontent']/form[@id='Geral']/div[@class='form']/div[@class='contentform']/span[2]/label/select[@class='f1col']").extract()
+		except:
+			logger.error("xpath failed to parse HTM content")
+			raise
+		try:
+			dictStates = html_to_json.convert(statesSelect[0], capture_element_attributes=False)
+		except:
+			logger.error("html_to_json failed to convert html to json object")
+			raise
 		states = [state['_value'] for state in dictStates['select'][0]['option'] if state]
 		return states
 
@@ -102,7 +158,7 @@ class Correios():
 				logger.info('Wait! There is more records we need to fetch :D')
 				self._data['pagini'] = iterStartPage + 1,
 				self._data['pagfim'] = iterStartPage + 50
-				logger.info(f'Next POST payload will be including pagini: {self._data["pagini"]} and pagfim: {self._data["pagfim"]}')
+				logger.info(f'Next POST payload will be including pagini: {iterStartPage + 1} and pagfim: {iterStartPage + 50}')
 				logger.info(f'Fetching new records...')
 				iterResponse, iterStatus = self._buscaResultado(data=self._data)
 				if(iterStatus == True):
@@ -117,10 +173,19 @@ class Correios():
 			return tableList
 		return []
 
-	def _buscaResultado(self, data: dict) -> tuple():
+	def _buscaResultado(self, data: dict) -> tuple:
 		self._data = data
-		response = self.s.post('https://www2.correios.com.br/sistemas/buscacep/ResultadoBuscaFaixaCEP.cfm', data=self._data)
-
+		try:
+			response = self.s.post('https://www2.correios.com.br/sistemas/buscacep/ResultadoBuscaFaixaCEP.cfm', data=self._data)
+		except requests.exceptions.Timeout:
+			logger.error("Source has timed out. Let`s try again in few minutes.")
+			raise
+		except requests.exceptions.TooManyRedirects:
+			logger.error("Bad URL. Too many redirects.")
+			raise
+		except requests.exceptions.RequestException as e:
+			logger.critical(e)
+			raise
 		return response.text, response.ok
 
 	def _structureList(self, list: list) -> list:

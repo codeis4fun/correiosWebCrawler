@@ -2,7 +2,7 @@
 Web crawler construído para buscar registros por localidade e faixas de CEP disponíveis no seguinte endereço: https://www2.correios.com.br/sistemas/buscacep/buscaFaixaCep.cfm
 
 ## Funcionamento
-O crawler inicialmente faz um GET request e armazena os cookies retornados em uma sessão. A partir da sessão iniciada, ele busca quais UFs estão disponíveis dentro do elemento HTML ``` <select name="UF" class="f1col">...</option> ``` e coloca em uma lista que será iterada para buscar os registros. A tabela retorna 50 registros por vez. Na primeira request o crawler identifica o número total de linhas para trazer os registros de faltam.
+O crawler inicialmente faz um GET request e armazena os cookies retornados em uma sessão. A partir da sessão iniciada, ele busca quais UFs estão disponíveis dentro do elemento HTML ``` <select name="UF" class="f1col">...</option> ``` e coloca em uma lista que será iterada para buscar os registros. A tabela retorna 50 registros por vez. Na primeira request o crawler identifica o número total de linhas para trazer os registros que faltam.
 
 
 ![Crawler em funcionamento](https://media.giphy.com/media/qWX19kqpdMbxKd84MM/giphy.gif)
@@ -15,7 +15,7 @@ Para não haver registros duplicados, o critério utilizado foi buscar as faixas
 
 Na imagem acima, temos a localidade "Arapiraca" repetindo duas vezes. Utilizando o critério de deduplicação de dados, o crawler utilizar o registro da **terceira linha** que contem a faixa de CEP **57300-001 a 57319-999**
 
-## Instalação
+## Utilização
 
 ## 1 - Clonar repositório
 ```
@@ -23,6 +23,7 @@ git clone https://github.com/codeis4fun/correiosWebCrawler.git
 ```
 ## 2 - Criar ambiente virtual
 ```
+cd correiosWebCrawler
 python3 -m venv venv
 ```
 ## 3 - Acessar ambiente virtual criado
