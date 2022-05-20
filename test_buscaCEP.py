@@ -72,7 +72,7 @@ class TestCorreios(unittest.TestCase):
         self.assertIsInstance(self.correios._extractPages(), tuple)
 
     @mock.patch.object(Correios, '_extractStates', return_value = tuple())
-    def test_extractPages(self, f):
+    def test_extractStates(self, f):
         self.assertIsInstance(self.correios._extractStates(), tuple)
 
     @mock.patch.object(Correios, '_cleanEmptyElements', return_value = list())
